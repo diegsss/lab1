@@ -39,6 +39,9 @@ using namespace std;
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
 #include <GL/glx.h>
+#include <unistd.h>
+//
+#include "fonts.h"
 
 const int MAX_PARTICLES = 2000;
 const float GRAVITY     = 0.1;
@@ -331,7 +334,13 @@ void movement()
 
 void render()
 {
+    Rect r;
 	glClear(GL_COLOR_BUFFER_BIT);
+    //add text
+    r.bot = g.yres - 20;
+    r.left = 10;
+    r.center = 0;
+    ggprint8b(&r, 16, 0x00ff0000, "3350 - Waterfall");
 	//Draw shapes...
 	//draw the box
 	Shape *s;
