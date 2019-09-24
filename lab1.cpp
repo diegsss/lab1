@@ -43,8 +43,8 @@ using namespace std;
 //
 #include "fonts.h"
 
-const int MAX_PARTICLES = 2000;
-const float GRAVITY     = 0.1;
+const int MAX_PARTICLES = 200000;
+const float GRAVITY     = 1.0;
 
 //some structures
 
@@ -66,7 +66,7 @@ struct Particle {
 class Global {
 public:
 	int xres, yres;
-	Shape box;
+	Shape box[5];
 	Particle particle[MAX_PARTICLES];
 	int n;
 	Global();
@@ -126,11 +126,13 @@ Global::Global()
 	xres = 800;
 	yres = 600;
 	//define a box shape
-	box.width = 100;
-	box.height = 10;
-	box.center.x = 120 + 5*65;
-	box.center.y = 500 - 5*60;
-	n = 0;
+    for(int i = 0; i < 5;i++){
+	    box[i].width = 50;
+	    box[i].height = 10;
+	    box[i].center.x = 120 + 5*65 - i * 100;
+	    box[i].center.y = 500 - 5*60 + i * 80;
+    }
+    n = 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -210,6 +212,9 @@ void init_opengl(void)
 	glOrtho(0, g.xres, 0, g.yres, -1, 1);
 	//Set the screen background color
 	glClearColor(0.1, 0.1, 0.1, 1.0);
+    //Do this to allow fonts
+    glEnable(GL_TEXTURE_2D);
+    initialize_fonts();
 }
 
 void makeParticle(int x, int y)
@@ -223,8 +228,8 @@ void makeParticle(int x, int y)
 	Particle *p = &g.particle[g.n];
 	p->s.center.x = x;
 	p->s.center.y = y;
-	p->velocity.y =  ((double)rand() / (double)RAND_MAX)- 0.5;
-	p->velocity.x =  ((double)rand() / (double)RAND_MAX)- 0.5 + 0.25;
+	p->velocity.y =  ((double)rand() / (double)RAND_MAX)* 1.2;
+	p->velocity.x =  ((double)rand() / (double)RAND_MAX)* 1.2 + 0.25;
 	++g.n;
 }
 
@@ -305,20 +310,24 @@ void movement()
 	if (g.n <= 0)
 		return;
 	for(int i =0; i<g.n;i++){
-	Particle *p = &g.particle[i];
-	p->s.center.x += p->velocity.x;
-	p->s.center.y += p->velocity.y;
-	p->velocity.y -= GRAVITY;
+	    Particle *p = &g.particle[i];
+    	p->s.center.x += p->velocity.x;
+	    p->s.center.y += p->velocity.y;
+	    p->velocity.y -= GRAVITY;
 
 	//check for collision with shapes...
 	//Shape *s;
-	Shape *s = &g.box;
+    for(int i = 0;i < 5;i++){
+
+    
+	Shape *s = &g.box[i];
 	if(p->s.center.y < s->center.y + s->height && 
 	p->s.center.x > s->center.x - s->width && 
-	p->s.center.x < s->center.x + s->width){
-	    p->velocity.y = -(p->velocity.y*0.8);
+	p->s.center.x < s->center.x + s->width &&
+    p->s.center.y > s->center.y - s->height){
+	    p->velocity.y = -(p->velocity.y*0.5);
 	    //cout << "collison" << endl;
-	}
+	}}
 
 
 
@@ -345,19 +354,22 @@ void render()
 	//draw the box
 	Shape *s;
 	glColor3ub(90,140,90);
-	s = &g.box;
-	glPushMatrix();
-	glTranslatef(s->center.x, s->center.y, s->center.z);
-	float w, h;
-	w = s->width;
-	h = s->height;
-	glBegin(GL_QUADS);
-		glVertex2i(-w, -h);
-		glVertex2i(-w,  h);
-		glVertex2i( w,  h);
-		glVertex2i( w, -h);
-	glEnd();
-	glPopMatrix();
+    float w, h;
+    for(int i = 0;i < 5;i++)
+    {
+	    s = &g.box[i];
+	    glPushMatrix();
+	    glTranslatef(s->center.x, s->center.y, s->center.z);
+	    w = s->width;
+	    h = s->height;
+	    glBegin(GL_QUADS);
+		    glVertex2i(-w, -h);
+		    glVertex2i(-w,  h);
+		    glVertex2i( w,  h);
+		    glVertex2i( w, -h);
+	    glEnd();
+	    glPopMatrix();
+    }
 	//
 	//Draw particles here
 	//if (g.n > 0) {
@@ -375,6 +387,15 @@ void render()
 		glEnd();
 		glPopMatrix();
 	}
+
+    unsigned int c = 0x00ffff12;
+    const char * text[] = {"Maintenance","Testing","Coding","Design","Requirements"};
+
+    for(int i = 0;i < 5;i++){
+        r.left = g.box[i].center.x - i * 4.5 - 20;
+        r.bot = g.box[i].center.y - 5;
+        ggprint8b(&r,16,c,text[i]);
+    }
 	//
 	//Draw your 2D text here
 
